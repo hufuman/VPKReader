@@ -114,6 +114,7 @@ ID_ACCELERATOR_MAIN ACCELERATORS
 BEGIN
     "F",            ID_EDIT_FINDFILE,       VIRTKEY, CONTROL, NOINVERT
     "O",            ID_FILE_OPEN,           VIRTKEY, CONTROL, NOINVERT
+    VK_F3,          ID_EDIT_FINDFILE,       VIRTKEY, NOINVERT
 END
 
 #endif    // Chinese (P.R.C.) resources

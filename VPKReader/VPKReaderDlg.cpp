@@ -840,9 +840,14 @@ BOOL CVPKReaderDlg::FindListFileItem(LPCTSTR szFilter, DWORD dwFlags, HTREEITEM&
 
     POSITION pos = m_List.GetFirstSelectedItemPosition();
     if(pos == NULL)
+    {
         nStart = (dwFlags & Find_Next) ? 0 : m_List.GetItemCount() - 1;
+    }
     else
-        nStart = m_List.GetNextSelectedItem(pos) + (dwFlags & Find_Next) ? 1 : -1;
+    {
+        nStart = m_List.GetNextSelectedItem(pos);
+        nStart += (dwFlags & Find_Next) ? 1 : -1;
+    }
 
     if(dwFlags & Find_Next)
     {
@@ -898,7 +903,7 @@ void CVPKReaderDlg::ClearListSelection()
 
     for(int i=0; i<selectedItemIndex.GetCount(); ++ i)
     {
-        m_List.SetItemState(i, 0, LVIS_SELECTED | LVIS_FOCUSED);
+        m_List.SetItemState(selectedItemIndex.GetAt(i), 0, LVIS_SELECTED | LVIS_FOCUSED);
     }
 }
 

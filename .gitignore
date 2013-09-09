@@ -5,6 +5,11 @@
 *.ncb
 *.suo
 *.user
+*.aps
+Debug
+VPKReader/Debug
+VPKReader/Release
+Release/VPKReader.pdb
 
 # Compiled Dynamic libraries
 *.so
