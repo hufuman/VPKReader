@@ -454,7 +454,7 @@ BOOL CVPKReaderDlg::PreTranslateMessage(MSG* pMsg)
     if(::TranslateAccelerator(m_hWnd, m_hAccel, pMsg))
         return TRUE;
 
-    if(pMsg->wParam == VK_ESCAPE
+    if((pMsg->wParam == VK_ESCAPE || pMsg->wParam == VK_RETURN)
         && (pMsg->message == WM_KEYDOWN || pMsg->message == WM_KEYUP))
     {
         return TRUE;
@@ -658,11 +658,13 @@ LRESULT CVPKReaderDlg::OnFindReplaceMsg(WPARAM, LPARAM)
     }
     else if(m_pFindDlg->FindNext())
     {
-        m_pFindDlg->ShowWindow(SW_HIDE);
         HTREEITEM hItem = NULL;
         int nListItemIndex = 0;
 
         CString strFilter = m_pFindDlg->GetFindString();
+        if(strFilter.Find(_T("*")) == -1 || strFilter.Find(_T("?")) == -1)
+            strFilter = _T("*") + strFilter + _T("*");
+
         DWORD dwFlags = 0;
         dwFlags |= m_pFindDlg->SearchDown() ? Find_Next : Find_Prev;
         // dwFlags |= m_pFindDlg->MatchWholeWord() ? Find_WholeMatch : 0;
@@ -698,6 +700,7 @@ LRESULT CVPKReaderDlg::OnFindReplaceMsg(WPARAM, LPARAM)
             m_List.SetItemState(nListItemIndex, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
             m_List.EnsureVisible(nListItemIndex, FALSE);
             m_List.SetFocus();
+            m_pFindDlg->ShowWindow(SW_HIDE);
         }
     }
 
