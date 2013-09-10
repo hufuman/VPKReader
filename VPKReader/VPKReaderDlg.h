@@ -5,7 +5,7 @@
 #pragma once
 
 
-#include <WndLayout.h>
+#include "WndLayout.h"
 
 #include "VPKFile.h"
 #include "TriStateTreeCtrl.h"

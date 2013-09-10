@@ -190,14 +190,6 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\FileHandleCache.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\FileUtil.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\stdafx.cpp"
 				>
 				<FileConfiguration
@@ -222,10 +214,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\VPKFile.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\VPKReader.cpp"
 				>
 			</File>
@@ -240,14 +228,6 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\FileHandleCache.h"
-				>
-			</File>
-			<File
-				RelativePath=".\FileUtil.h"
-				>
-			</File>
-			<File
 				RelativePath=".\Resource.h"
 				>
 			</File>
@@ -261,10 +241,6 @@
 			</File>
 			<File
 				RelativePath=".\TriStateTreeCtrl.h"
-				>
-			</File>
-			<File
-				RelativePath=".\VPKFile.h"
 				>
 			</File>
 			<File
@@ -299,14 +275,38 @@
 			</File>
 		</Filter>
 		<Filter
-			Name="share"
+			Name="Util"
 			>
 			<File
-				RelativePath="..\..\DotShare\WndLayout.cpp"
+				RelativePath=".\FileHandleCache.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\DotShare\WndLayout.h"
+				RelativePath=".\FileHandleCache.h"
+				>
+			</File>
+			<File
+				RelativePath=".\FileUtil.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\FileUtil.h"
+				>
+			</File>
+			<File
+				RelativePath=".\VPKFile.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\VPKFile.h"
+				>
+			</File>
+			<File
+				RelativePath=".\WndLayout.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\WndLayout.h"
 				>
 			</File>
 		</Filter>
