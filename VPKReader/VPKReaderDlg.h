@@ -23,6 +23,7 @@ struct stExportThreadData
     CString strVpkDirFile;
     CString strPath;
     CList<const FileInfo*>* pFiles;
+    CList<const FileInfo*>* pErrFiles;
 };
 
 // CVPKReaderDlg dialog
@@ -44,7 +45,6 @@ private:
     void DestroyTreeItem(HTREEITEM hItem);
     void GetSelectedDir(HTREEITEM hItem, CList<const FileInfo*>& files);
     void ExportFiles(CList<const FileInfo*>* pFiles);
-    BOOL CheckExportThread();
 
     BOOL FindPrevFileItem(HTREEITEM hStartItem, LPCTSTR szFilter, DWORD dwFlags, HTREEITEM& hItem, int& nListItemIndex);
     BOOL FindPrevFileItemHelper(HTREEITEM hStartItem, LPCTSTR szFilter, DWORD dwFlags, HTREEITEM& hItem, int& nListItemIndex);
@@ -69,11 +69,14 @@ protected:
     HANDLE          m_hThread;
     volatile BOOL   m_bStop;
 
-    CEdit       m_EditLog;
+    CEdit           m_EditLog;
     CTriStateTreeCtrl m_Tree;
-    CListCtrl   m_List;
-    CWndLayout  m_WndLayout;
+    CListCtrl       m_List;
+    CWndLayout      m_WndLayout;
 
+    UINT_PTR        m_uCheckThreadTimerId;
+
+    CList<const FileInfo*> m_errFiles;
     CList<CList<const FileInfo*>* > m_arrTreeItemDatas;
 
     VPKFile m_VPKFile;
@@ -101,4 +104,5 @@ public:
     afx_msg LRESULT OnFindReplaceMsg(WPARAM wParam, LPARAM lParam);
 
     virtual BOOL PreTranslateMessage(MSG* pMsg);
+    afx_msg void OnTimer(UINT_PTR nIDEvent);
 };

@@ -57,6 +57,7 @@ CVPKReaderDlg::CVPKReaderDlg(CWnd* pParent /*=NULL*/)
     m_bStop = FALSE;
     m_hAccel = NULL;
     m_pFindDlg = NULL;
+    m_uCheckThreadTimerId = 0;
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
 
@@ -85,6 +86,7 @@ BEGIN_MESSAGE_MAP(CVPKReaderDlg, CDialog)
     ON_COMMAND(ID_FILE_EXPORTSELECTEDFILES, &CVPKReaderDlg::OnFileExportSelectedFiles)
     ON_WM_INITMENUPOPUP()
     ON_REGISTERED_MESSAGE(WM_FINDREPLACE, &CVPKReaderDlg::OnFindReplaceMsg)
+    ON_WM_TIMER()
 END_MESSAGE_MAP()
 
 
@@ -441,11 +443,19 @@ void CVPKReaderDlg::OnInitMenuPopup(CMenu* pPopupMenu, UINT nIndex, BOOL bSysMen
 {
     if(!bSysMenu && nIndex == 0)
     {
-        TriStateTreeState state = m_Tree.GetTriCheck(m_Tree.GetRootItem());
-        UINT nCount = m_List.GetSelectedCount();
+        if(m_hThread != NULL)
+        {
+            pPopupMenu->EnableMenuItem(ID_FILE_EXPORTSELECTEDDIRS, MF_DISABLED | MF_BYCOMMAND);
+            pPopupMenu->EnableMenuItem(ID_FILE_EXPORTSELECTEDFILES, MF_DISABLED | MF_BYCOMMAND);
+        }
+        else
+        {
+            TriStateTreeState state = m_Tree.GetTriCheck(m_Tree.GetRootItem());
+            UINT nCount = m_List.GetSelectedCount();
 
-        pPopupMenu->EnableMenuItem(ID_FILE_EXPORTSELECTEDDIRS, ((state != TSS_UnChecked) ? MF_ENABLED : MF_DISABLED) | MF_BYCOMMAND);
-        pPopupMenu->EnableMenuItem(ID_FILE_EXPORTSELECTEDFILES, ((nCount > 0) ? MF_ENABLED : MF_DISABLED) | MF_BYCOMMAND);
+            pPopupMenu->EnableMenuItem(ID_FILE_EXPORTSELECTEDDIRS, ((state != TSS_UnChecked) ? MF_ENABLED : MF_DISABLED) | MF_BYCOMMAND);
+            pPopupMenu->EnableMenuItem(ID_FILE_EXPORTSELECTEDFILES, ((nCount > 0) ? MF_ENABLED : MF_DISABLED) | MF_BYCOMMAND);
+        }
     }
 }
 
@@ -464,9 +474,6 @@ BOOL CVPKReaderDlg::PreTranslateMessage(MSG* pMsg)
 
 void CVPKReaderDlg::OnFileExportSelectedDirs()
 {
-    if(!CheckExportThread())
-        return;
-
     CList<const FileInfo*>* pFiles = new CList<const FileInfo*>();
 
     GetSelectedDir(m_Tree.GetRootItem(), *pFiles);
@@ -476,9 +483,6 @@ void CVPKReaderDlg::OnFileExportSelectedDirs()
 
 void CVPKReaderDlg::OnFileExportSelectedFiles()
 {
-    if(!CheckExportThread())
-        return;
-
     POSITION pos = m_List.GetFirstSelectedItemPosition();
     if(pos == NULL)
         return;
@@ -542,30 +546,16 @@ void CVPKReaderDlg::ExportFiles(CList<const FileInfo*>* pFiles)
     data->strVpkDirFile = m_VPKFile.GetFilePath();
     data->pFiles = pFiles;
     data->strPath = szPath;
+    data->pErrFiles = &m_errFiles;
+
+    m_Tree.EnableWindow(FALSE);
+    m_List.EnableWindow(FALSE);
+
+    m_errFiles.RemoveAll();
+
     m_hThread = (HANDLE)_beginthreadex(0, 0, &ExportThreadProc, (void*)data, 0, 0);
-}
 
-BOOL CVPKReaderDlg::CheckExportThread()
-{
-    if(m_hThread == NULL)
-        return TRUE;
-
-    DWORD dwExitCode = 0;
-    if(::GetExitCodeThread(m_hThread, &dwExitCode) && dwExitCode != STILL_ACTIVE)
-    {
-        ::CloseHandle(m_hThread);
-        m_hThread = NULL;
-    }
-
-    if(m_hThread != NULL && AfxMessageBox(_T("Files Exporting, do you want to cancel the current job?"), MB_YESNO | MB_ICONQUESTION) != IDNO)
-        return FALSE;
-
-    m_bStop = TRUE;
-    ::WaitForSingleObject(m_hThread, INFINITE);
-    ::CloseHandle(m_hThread);
-    m_hThread = NULL;
-
-    return TRUE;
+    m_uCheckThreadTimerId = SetTimer(100, 500, NULL);
 }
 
 unsigned CVPKReaderDlg::ExportThreadProc(void* lParam)
@@ -577,7 +567,10 @@ unsigned CVPKReaderDlg::ExportThreadProc(void* lParam)
     for(int i=0; i<nCount; ++ i)
     {
         const FileInfo* pInfo = data->pFiles->GetNext(pos);
-        ExportFileContent(data->strVpkDirFile, data->strPath, pInfo);
+        if(!ExportFileContent(data->strVpkDirFile, data->strPath, pInfo))
+        {
+            data->pErrFiles->AddTail(pInfo);
+        }
     }
 
     CFileHandleCache::instance().Clear();
@@ -599,7 +592,7 @@ BOOL CVPKReaderDlg::ExportFileContent(LPCTSTR szVpkDirFile, LPCSTR szDstPath, co
 
     strFullPath += _T("\\") + pInfo->strFileName;
 
-    FileUtil::CFileWriteHandle hDstFile(::CreateFile(strFullPath, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL));
+    FileUtil::CFileWriteHandle hDstFile(strFullPath, TRUE);
     if(hDstFile == INVALID_HANDLE_VALUE)
         return FALSE;
 
@@ -642,6 +635,8 @@ BOOL CVPKReaderDlg::ExportFileContent(LPCTSTR szVpkDirFile, LPCSTR szDstPath, co
                 return FALSE;
         }
     }
+
+    hDstFile.Close();
 
     return TRUE;
 }
@@ -950,4 +945,45 @@ BOOL CVPKReaderDlg::MatchTreeItem(HTREEITEM hTreeItem, LPCTSTR szFilter, DWORD d
         }
     }
     return FALSE;
+}
+
+void CVPKReaderDlg::OnTimer(UINT_PTR nIDEvent)
+{
+    // TODO: Add your message handler code here and/or call default
+    if(m_uCheckThreadTimerId == nIDEvent)
+    {
+        DWORD dwExitCode = 0;
+        if(::GetExitCodeThread(m_hThread, &dwExitCode) && dwExitCode != STILL_ACTIVE)
+        {
+            ::CloseHandle(m_hThread);
+            m_hThread = NULL;
+
+            KillTimer(m_uCheckThreadTimerId);
+            m_uCheckThreadTimerId = 0;
+
+            m_Tree.EnableWindow(TRUE);
+            m_List.EnableWindow(TRUE);
+
+            CString strTemp;
+            CString strMsg(_T("All Files Exported.\r\n"));
+
+            int nInfoCount = m_errFiles.GetCount();
+            if(nInfoCount > 0)
+            {
+                strMsg += _T("The following files are not exported because of unknown error: \r\n");
+                POSITION pos = m_errFiles.GetHeadPosition();
+                for(int i=0; i<nInfoCount; ++ i)
+                {
+                    const FileInfo* pInfo = m_errFiles.GetNext(pos);
+                    strTemp.Format(_T("%s/%s\r\n"), pInfo->strFilePath, pInfo->strFileName);
+                    strMsg += strTemp;
+                }
+            }
+            m_errFiles.RemoveAll();
+            AfxMessageBox(strMsg);
+
+        }
+
+    }
+    CDialog::OnTimer(nIDEvent);
 }

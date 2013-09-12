@@ -10,9 +10,11 @@ namespace FileUtil
         CFileWriteHandle(const CFileWriteHandle&);
         CFileWriteHandle& operator = (const CFileWriteHandle&);
     public:
-        explicit CFileWriteHandle(HANDLE hFile)
+        explicit CFileWriteHandle(LPCTSTR szFilePath, BOOL bDeleteOnDestructor)
         {
-            m_hFile = hFile;
+            m_strFilePath = szFilePath;
+            m_hFile = ::CreateFile(szFilePath, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+            m_bDeleteOnDestructor = bDeleteOnDestructor;
         }
 
         CFileWriteHandle()
@@ -21,6 +23,19 @@ namespace FileUtil
         }
 
         ~CFileWriteHandle()
+        {
+            if(m_hFile != INVALID_HANDLE_VALUE)
+            {
+                ::CloseHandle(m_hFile);
+                m_hFile = INVALID_HANDLE_VALUE;
+                if(m_bDeleteOnDestructor)
+                {
+                    ::DeleteFile(m_strFilePath);
+                }
+            }
+        }
+
+        void Close()
         {
             if(m_hFile != INVALID_HANDLE_VALUE)
             {
@@ -35,6 +50,8 @@ namespace FileUtil
         }
 
     private:
-        HANDLE m_hFile;
+        BOOL    m_bDeleteOnDestructor;
+        HANDLE  m_hFile;
+        CString m_strFilePath;
     };
 };
